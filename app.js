@@ -4,11 +4,9 @@ const express       = require("express"),
       crypto        = require("crypto"),
       { execSync }  = require('child_process'),
       PORT	        = 5000,
-      GITHUB_SECRET = "",
+      GITHUB_SECRET = require("./key.js"),
       sigHeaderName = 'X-Hub-Signature-256',
       sigHashAlg    = 'sha256';
-
-console.log(GITHUB_SECRET)
     
 app.use(bodyParser.json({
     verify: (req, res, buf, encoding) => {
