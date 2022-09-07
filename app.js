@@ -22,7 +22,7 @@ app.use(bodyParser.json({
 
 function verifySecret(req, res, next) {
     if (!req.rawBody) {
-        console.log("Body is empty")
+        console.log("[ERROR] Request recieved: No payload");
         return res.end();
     }
 
@@ -30,35 +30,35 @@ function verifySecret(req, res, next) {
     const hmac = crypto.createHmac(SIG_HASH_ALG, GITHUB_SECRET);
     const digest = Buffer.from(SIG_HASH_ALG + '=' + hmac.update(req.rawBody).digest('hex'), 'utf8');
     if (sig.length !== digest.length || !crypto.timingSafeEqual(digest, sig)) {
-        console.log("Hashes don't match");
-        return res.end();
+        console.log("[WARN] Request recieved: Hashes don't match!");
+        return res.status(401).send("401 Unauthorized").end();
     }
 
     return next()
 }
 
 app.post("/deploy", verifySecret, (req, res) => {
+    res.status(200).send("OK");
+
     try {
         let branch = req.body.ref.split("/")[2];
+
         if (WATCH_BRANCHES.length === 0 || WATCH_BRANCHES.includes(branch)) {
-            console.log("Running script")
+            console.log("[INFO] Request recieved: branch match: Running script")
             let commandToRun = `sh ${PATH_TO_SHELL_SCRIPT}`;
             if (RUN_SCRIPT_WITH_SUDO) {
                 commandToRun = "sudo " + commandToRun;
             }
-    
+    	    
             execSync(commandToRun);
-            console.log("Script executed successfully");
         }
     } 
     catch (error) {
-        console.log("An error occured while executing the script");
+        console.log("[ERROR] An error occured while trying to execute the script");
         console.log(error);
     }
-
-    res.end();
 });
 
 app.listen(PORT, () => {
-    console.log("[RUN] Running on port " + PORT);
+    console.log("[INFO] Running on port " + PORT);
 });
